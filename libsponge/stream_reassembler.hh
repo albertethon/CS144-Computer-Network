@@ -4,16 +4,28 @@
 #include "byte_stream.hh"
 
 #include <cstdint>
+#include <map>
 #include <string>
 
 //! \brief A class that assembles a series of excerpts from a byte stream (possibly out of order,
 //! possibly overlapping) into an in-order byte stream.
+using namespace std;
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-
     ByteStream _output;  //!< The reassembled in-order byte stream
     size_t _capacity;    //!< The maximum number of bytes
+    size_t _endptr;
+    map<size_t, string> _datas;
+    map<size_t, string> _assembled_strs;
+    size_t next_unassembled;
+    // output buffer满了, 写不进去, 需要在此排队等候
+    // check if two string is overlapped
+    bool overlapped(const pair<size_t, string> &s1, const pair<size_t, string> &s2);
+    // merge the consistance data
+    void merge_all();
+    void flush_assembled();
+    void __push_substring(const string &data, const size_t index);
 
   public:
     //! \brief Construct a `StreamReassembler` that will store up to `capacity` bytes.
@@ -29,7 +41,7 @@ class StreamReassembler {
     //! \param data the substring
     //! \param index indicates the index (place in sequence) of the first byte in `data`
     //! \param eof the last byte of `data` will be the last byte in the entire stream
-    void push_substring(const std::string &data, const uint64_t index, const bool eof);
+    void push_substring(const string &data, const uint64_t index, const bool eof);
 
     //! \name Access the reassembled byte stream
     //!@{

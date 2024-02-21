@@ -1,0 +1,246 @@
+Start testing: Feb 19 22:42 CST
+----------------------------------------------------------
+18/164 Testing: t_strm_reassem_single
+18/164 Test: t_strm_reassem_single
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_single"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_single" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_strm_reassem_single" end time: Feb 19 22:42 CST
+"t_strm_reassem_single" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/164 Testing: t_strm_reassem_seq
+19/164 Test: t_strm_reassem_seq
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_seq"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_seq" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_strm_reassem_seq" end time: Feb 19 22:42 CST
+"t_strm_reassem_seq" time elapsed: 00:00:00
+----------------------------------------------------------
+
+20/164 Testing: t_strm_reassem_dup
+20/164 Test: t_strm_reassem_dup
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_dup"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_dup" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_strm_reassem_dup" end time: Feb 19 22:42 CST
+"t_strm_reassem_dup" time elapsed: 00:00:00
+----------------------------------------------------------
+
+21/164 Testing: t_strm_reassem_holes
+21/164 Test: t_strm_reassem_holes
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_holes"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_holes" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_strm_reassem_holes" end time: Feb 19 22:42 CST
+"t_strm_reassem_holes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+22/164 Testing: t_strm_reassem_many
+22/164 Test: t_strm_reassem_many
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_many"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_many" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+Exception: test 1 - number of bytes RX is incorrect
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Failed.
+"t_strm_reassem_many" end time: Feb 19 22:42 CST
+"t_strm_reassem_many" time elapsed: 00:00:00
+----------------------------------------------------------
+
+23/164 Testing: t_strm_reassem_overlapping
+23/164 Test: t_strm_reassem_overlapping
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_overlapping"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_overlapping" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_strm_reassem_overlapping" end time: Feb 19 22:42 CST
+"t_strm_reassem_overlapping" time elapsed: 00:00:00
+----------------------------------------------------------
+
+24/164 Testing: t_strm_reassem_win
+24/164 Test: t_strm_reassem_win
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_win"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_win" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+writen:120933	offset:130031
+Exception: test 2 - number of RX bytes is incorrect
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Failed.
+"t_strm_reassem_win" end time: Feb 19 22:42 CST
+"t_strm_reassem_win" time elapsed: 00:00:00
+----------------------------------------------------------
+
+25/164 Testing: t_strm_reassem_cap
+25/164 Test: t_strm_reassem_cap
+Command: "/home/max/CS144-Computer-Network/tests/fsm_stream_reassembler_cap"
+Directory: /home/max/CS144-Computer-Network
+"t_strm_reassem_cap" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.06 sec
+----------------------------------------------------------
+Test Passed.
+"t_strm_reassem_cap" end time: Feb 19 22:42 CST
+"t_strm_reassem_cap" time elapsed: 00:00:00
+----------------------------------------------------------
+
+26/164 Testing: t_byte_stream_construction
+26/164 Test: t_byte_stream_construction
+Command: "/home/max/CS144-Computer-Network/tests/byte_stream_construction"
+Directory: /home/max/CS144-Computer-Network
+"t_byte_stream_construction" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_byte_stream_construction" end time: Feb 19 22:42 CST
+"t_byte_stream_construction" time elapsed: 00:00:00
+----------------------------------------------------------
+
+27/164 Testing: t_byte_stream_one_write
+27/164 Test: t_byte_stream_one_write
+Command: "/home/max/CS144-Computer-Network/tests/byte_stream_one_write"
+Directory: /home/max/CS144-Computer-Network
+"t_byte_stream_one_write" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_byte_stream_one_write" end time: Feb 19 22:42 CST
+"t_byte_stream_one_write" time elapsed: 00:00:00
+----------------------------------------------------------
+
+28/164 Testing: t_byte_stream_two_writes
+28/164 Test: t_byte_stream_two_writes
+Command: "/home/max/CS144-Computer-Network/tests/byte_stream_two_writes"
+Directory: /home/max/CS144-Computer-Network
+"t_byte_stream_two_writes" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_byte_stream_two_writes" end time: Feb 19 22:42 CST
+"t_byte_stream_two_writes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+29/164 Testing: t_byte_stream_capacity
+29/164 Test: t_byte_stream_capacity
+Command: "/home/max/CS144-Computer-Network/tests/byte_stream_capacity"
+Directory: /home/max/CS144-Computer-Network
+"t_byte_stream_capacity" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.31 sec
+----------------------------------------------------------
+Test Passed.
+"t_byte_stream_capacity" end time: Feb 19 22:42 CST
+"t_byte_stream_capacity" time elapsed: 00:00:00
+----------------------------------------------------------
+
+30/164 Testing: t_byte_stream_many_writes
+30/164 Test: t_byte_stream_many_writes
+Command: "/home/max/CS144-Computer-Network/tests/byte_stream_many_writes"
+Directory: /home/max/CS144-Computer-Network
+"t_byte_stream_many_writes" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_byte_stream_many_writes" end time: Feb 19 22:42 CST
+"t_byte_stream_many_writes" time elapsed: 00:00:00
+----------------------------------------------------------
+
+48/164 Testing: t_address_dt
+48/164 Test: t_address_dt
+Command: "/home/max/CS144-Computer-Network/doctests/address_dt"
+Directory: /home/max/CS144-Computer-Network
+"t_address_dt" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"t_address_dt" end time: Feb 19 22:42 CST
+"t_address_dt" time elapsed: 00:00:00
+----------------------------------------------------------
+
+49/164 Testing: t_parser_dt
+49/164 Test: t_parser_dt
+Command: "/home/max/CS144-Computer-Network/doctests/parser_dt"
+Directory: /home/max/CS144-Computer-Network
+"t_parser_dt" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_parser_dt" end time: Feb 19 22:42 CST
+"t_parser_dt" time elapsed: 00:00:00
+----------------------------------------------------------
+
+50/164 Testing: t_socket_dt
+50/164 Test: t_socket_dt
+Command: "/home/max/CS144-Computer-Network/doctests/socket_dt"
+Directory: /home/max/CS144-Computer-Network
+"t_socket_dt" start time: Feb 19 22:42 CST
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"t_socket_dt" end time: Feb 19 22:42 CST
+"t_socket_dt" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Feb 19 22:42 CST

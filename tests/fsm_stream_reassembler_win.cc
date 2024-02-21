@@ -50,6 +50,7 @@ int main() {
 
             auto result = read(buf);
             if (buf.stream_out().bytes_written() != offset) {  // read bytes
+                printf("writen:%lu\toffset:%lu\n",buf.stream_out().bytes_written(),offset);
                 throw runtime_error("test 2 - number of RX bytes is incorrect");
             }
             if (!equal(result.cbegin(), result.cend(), d.cbegin())) {
