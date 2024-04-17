@@ -16,5 +16,3 @@ t_strm_reassem_overlapping 4 0.00035247
 t_strm_reassem_win 0 0
 t_strm_reassem_cap 13 0.00474183
 ---
-t_strm_reassem_many
-t_strm_reassem_win

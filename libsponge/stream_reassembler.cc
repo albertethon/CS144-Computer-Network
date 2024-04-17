@@ -52,8 +52,10 @@ void StreamReassembler::flush_assembled() {
         // remove from assembled strs
         if (write_bytes == _next_str.length())
             _assembled_strs.erase(_next_id);
-        else
-            _assembled_strs[_next_id] = _next_str.substr(write_bytes);
+        else{
+            _assembled_strs[_next_id + write_bytes] = _next_str.substr(write_bytes);
+            _assembled_strs.erase(_next_id);
+        }
     }
 }
 
@@ -170,6 +172,14 @@ size_t StreamReassembler::unassembled_bytes() const {
         unassembledBytes += iter.second.length();
     }
     return unassembledBytes;
+}
+
+size_t StreamReassembler::assembled_bytes() const{
+    size_t assembledBytes = 0;
+    for (auto iter : _assembled_strs) {
+        assembledBytes += iter.second.length();
+    }
+    return assembledBytes;
 }
 
 bool StreamReassembler::empty() const { return _datas.empty(); }
