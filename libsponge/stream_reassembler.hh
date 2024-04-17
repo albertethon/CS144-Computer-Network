@@ -43,8 +43,8 @@ class StreamReassembler {
     //! \param eof the last byte of `data` will be the last byte in the entire stream
     void push_substring(const string &data, const uint64_t index, const bool eof);
 
-    size_t get_next_unassembled() const {return next_unassembled+(next_unassembled == _endptr);}
-    size_t get_first_assembled() const {return _assembled_strs.begin()->first;}
+    size_t get_next_unassembled() const { return next_unassembled + (next_unassembled == _endptr); }
+    size_t get_first_assembled() const { return _assembled_strs.begin()->first; }
     //! \name Access the reassembled byte stream
     //!@{
     const ByteStream &stream_out() const { return _output; }

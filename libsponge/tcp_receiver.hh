@@ -20,6 +20,8 @@ class TCPReceiver {
     //! The maximum number of bytes we'll store.
     size_t _capacity;
 
+    bool is_syn_recv;
+
     // initial sequence number
     std::optional<WrappingInt32> _isn;
 
@@ -28,7 +30,7 @@ class TCPReceiver {
     //!
     //! \param capacity the maximum number of bytes that the receiver will
     //!                 store in its buffers at any give time.
-    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), _isn() {}
+    TCPReceiver(const size_t capacity) : _reassembler(capacity), _capacity(capacity), is_syn_recv(false), _isn() {}
 
     //! \name Accessors to provide feedback to the remote TCPSender
     //!@{
@@ -56,7 +58,7 @@ class TCPReceiver {
     //! \brief number of bytes stored but not yet reassembled
     size_t unassembled_bytes() const { return _reassembler.unassembled_bytes(); }
 
-    size_t get_checkpoint() const ;
+    size_t get_checkpoint() const;
     //! \brief handle an inbound segment
     void segment_received(const TCPSegment &seg);
 

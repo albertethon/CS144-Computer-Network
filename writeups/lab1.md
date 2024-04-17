@@ -20,7 +20,7 @@ Implementation Challenges:
 []
 
 Remaining Bugs:
-[]
+data为空时需要跳过，这个bug在lab2被发现
 
 - Optional: I had unexpected difficulty with: [describe]
 

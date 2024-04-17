@@ -52,7 +52,7 @@ void StreamReassembler::flush_assembled() {
         // remove from assembled strs
         if (write_bytes == _next_str.length())
             _assembled_strs.erase(_next_id);
-        else{
+        else {
             _assembled_strs[_next_id + write_bytes] = _next_str.substr(write_bytes);
             _assembled_strs.erase(_next_id);
         }
@@ -63,8 +63,8 @@ StreamReassembler::StreamReassembler(const size_t capacity)
     : _output(capacity), _capacity(capacity), _endptr(-1), _datas(), _assembled_strs(), next_unassembled(0) {}
 
 void StreamReassembler::__push_substring(const string &data, const size_t index) {
-    // overlap的部分assembled
-    if (index + data.length() <= next_unassembled)
+    // overlap的部分assembled, 或空的情况跳过
+    if (data.empty() || index + data.length() <= next_unassembled)
         return;
 
     size_t now = next_unassembled;
@@ -174,7 +174,7 @@ size_t StreamReassembler::unassembled_bytes() const {
     return unassembledBytes;
 }
 
-size_t StreamReassembler::assembled_bytes() const{
+size_t StreamReassembler::assembled_bytes() const {
     size_t assembledBytes = 0;
     for (auto iter : _assembled_strs) {
         assembledBytes += iter.second.length();
