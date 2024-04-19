@@ -4,6 +4,7 @@
 #include "byte_stream.hh"
 #include "tcp_config.hh"
 #include "tcp_segment.hh"
+#include "tcp_timer.hh"
 #include "wrapping_integers.hh"
 
 #include <functional>
@@ -29,6 +30,19 @@ class TCPSender {
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
+    //! send and not received ack segment, list方便更改
+    std::deque<TCPSegment> _outstanding{};
+    uint64_t _outgoing_bytes{0};
+    //! window size of receiver, default 1
+    uint64_t _send_window_size{1};
+
+    //! tcp timer
+    TCP_Timer _tcp_timer;
+    //
+    uint64_t _recv_window_size{1};
+    // 重传计数器
+    uint32_t _RT_times{0};
+    uint64_t _last_ackno{0};
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
@@ -47,15 +61,20 @@ class TCPSender {
     //! \name Methods that can cause the TCPSender to send a segment
     //!@{
 
-    //! \brief A new acknowledgment was received
+    /**
+     * @brief 查看outstanding并删除已ack段, 当有了新的空间，再次fill_window()
+     *
+     * @param ackno ACK号
+     * @param window_size 接收方窗口大小
+     */
     void ack_received(const WrappingInt32 ackno, const uint16_t window_size);
 
     //! \brief Generate an empty-payload segment (useful for creating empty ACK segments)
+    //! 不记录为outstanding, 不占用Seqno序列号，不重传
     void send_empty_segment();
 
     //! \brief create and send segments to fill as much of the window as possible
     void fill_window();
-
     //! \brief Notifies the TCPSender of the passage of time
     void tick(const size_t ms_since_last_tick);
     //!@}

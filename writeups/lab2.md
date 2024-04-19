@@ -1,7 +1,7 @@
 Lab 2 Writeup
 =============
 
-My name: 施佐烨
+My name: 
 
 My SUNet ID: 
 
