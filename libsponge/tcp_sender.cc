@@ -33,10 +33,12 @@ uint64_t TCPSender::bytes_in_flight() const { return _outgoing_bytes; }
  *
  */
 void TCPSender::fill_window() {
+    // 至少有一个window空间，则可以发SYN/FIN包等
     _send_window_size = _recv_window_size > 0 ? _recv_window_size : 1;
     while (_send_window_size > _outgoing_bytes) {
         TCPSegment seg;
-        TCPHeader header;
+        TCPHeader &header = seg.header();
+        Buffer &buffer = seg.payload();
 
         /**
          * @brief sender的状态分为CLOSED, SYN_SENT, SYN_ACKED, SYN_ACKED_EOF, FIN_SENT, FIN_ACKED
@@ -61,40 +63,33 @@ void TCPSender::fill_window() {
                                 && bytes_in_flight == 0
          */
 
-        // 装填window, CLOSE时单发一个SYN, SYN和FIN占一个window_size
-        // auto max_buffer_size = min(_send_window_size, TCPConfig::MAX_PAYLOAD_SIZE);
-
-        // 至少有一个window空间，则可以发SYN/FIN包等
-        // CLOSED
-        auto state = TCPState::state_summary(*this);
-        if (state == TCPSenderStateSummary::CLOSED) {
+        // 装填window,SYN和FIN占一个window_size
+        if (next_seqno_absolute() == 0) {  //  CLOSE时单发一个SYN
             header.syn = true;
+        } else if (next_seqno_absolute() == bytes_in_flight()) {  // SYN_SENT 此时未建立连接不能发
+            break;
+        } else if (_stream.input_ended() &&
+                   next_seqno_absolute() == _stream.bytes_written() + 2) {  // FIN_SENT || FIN_ACKED 此时调用都不发
+            break;
         }
 
         // 窗口删去outstanding 字节数和SYN包，看看剩下最多装多少payload
         auto max_payload_size = min(_send_window_size - _outgoing_bytes - header.syn, TCPConfig::MAX_PAYLOAD_SIZE);
-        Buffer buffer(_stream.read(max_payload_size));
+        buffer = Buffer(_stream.read(max_payload_size));
 
-        // SYN_ACKED_EOF
-        if (state == TCPSenderStateSummary::SYN_ACKED) {
-            // 此时需要判断窗口是否有位置装FIN包
-            if (_stream.input_ended() && _outgoing_bytes + buffer.size() < _send_window_size) {
-                header.fin = true;
-            }
+        // 此时需要判断窗口是否有位置装FIN包
+        if (_stream.input_ended() && _outgoing_bytes + seg.length_in_sequence_space() < _send_window_size) {
+            header.fin = true;
         }
-
-        // 装填
-        header.seqno = next_seqno();
-        seg.header() = header;
-        seg.payload() = buffer;
 
         // 数据包是空的，就不发
         if (seg.length_in_sequence_space() == 0)
             break;
 
+        header.seqno = next_seqno();                        // 更新序号
         _next_seqno += seg.length_in_sequence_space();      // seq自增
         _outgoing_bytes += seg.length_in_sequence_space();  // 追踪outgoing窗口
-        _last_ackno = max(_last_ackno, _next_seqno);
+        _last_ackno = max(_last_ackno, _next_seqno);        // 追踪最后一个ACK序号大小
 
         // 不必担心复制带来的空间浪费，这里seg.payload的buffer是共享指针管理的，只存储一份storage
         _segments_out.push(seg);
@@ -106,14 +101,14 @@ void TCPSender::fill_window() {
 //! \param ackno The remote receiver's ackno (acknowledgment number)
 //! \param window_size The remote receiver's advertised window size
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
-    // 当收到的ackno远大于最后一个等待的ack时抛弃
-    auto ack_recvd = unwrap(ackno, _isn, next_seqno_absolute());
+    // 当收到的ackno大于最后一个等待的ack时抛弃
+    const size_t ack_recvd = unwrap(ackno, _isn, next_seqno_absolute());
     if (ack_recvd > _last_ackno)
         return;
 
     _recv_window_size = window_size;
 
-    size_t _old_size = _outstanding.size();
+    const size_t _old_size = _outstanding.size();
     /**
      * @brief 对于ack确认的段, 可以扔了,
      *          发送应当是顺序发送， 乱序接收ACK
@@ -122,12 +117,12 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
      * @param out_seg:_outstanding
      */
     while (!_outstanding.empty()) {
-        auto out_seg = _outstanding.front();
-        auto ack_wait = out_seg.header().seqno + out_seg.length_in_sequence_space();
-        auto uw_ack_wait = unwrap(ack_wait, _isn, next_seqno_absolute());
+        const TCPSegment out_seg = _outstanding.front();
+        const auto ack_wait_wrap = out_seg.header().seqno + out_seg.length_in_sequence_space();
+        const size_t ack_wait = unwrap(ack_wait_wrap, _isn, next_seqno_absolute());
 
         // 大于当前seq+length即可，要求该ACK处于发送范围内，否则无视（比如远大于当前的seq号，显然不能把outstanding清空）
-        if (uw_ack_wait <= ack_recvd && ack_recvd <= _last_ackno) {
+        if (ack_wait <= ack_recvd) {
             _outgoing_bytes -= out_seg.length_in_sequence_space();
             _outstanding.pop_front();
         } else {
@@ -150,7 +145,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     }
 
     // 收到ACK更新seqno, 如果是之前的ack就不更新
-    _next_seqno = max(_next_seqno, unwrap(ackno, _isn, _next_seqno));
+    // _next_seqno = max(_next_seqno,ack_recvd);
 }
 
 /**

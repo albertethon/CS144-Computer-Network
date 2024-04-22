@@ -13,16 +13,18 @@ void DUMMY_CODE(Targs &&.../* unused */) {}
 using namespace std;
 
 ByteStream::ByteStream(const size_t capacity)
-    : buffer(), read_bytes(0), write_bytes(0), maximum(capacity), ended(false) {}
+    : buffer(), read_bytes(0), written_bytes(0), maximum(capacity), ended(false) {}
 
 size_t ByteStream::write(const string &data) {
     size_t len = data.size();
-    size_t i;
-    for (i = 0; i < len && !ended && buffer.size() < maximum; ++i) {
+    if (ended)
+        return 0;
+    size_t write_size = min(maximum - buffer_size(), len);
+    for (size_t i = 0; i < write_size; ++i) {
         buffer.push_back(data[i]);
     }
-    write_bytes += i;
-    return i;
+    written_bytes += write_size;
+    return write_size;
 }
 
 //! \param[in] len bytes will be copied from the output side of the buffer
@@ -76,7 +78,7 @@ bool ByteStream::buffer_empty() const { return buffer.empty(); }
 
 bool ByteStream::eof() const { return ended && buffer.empty(); }
 
-size_t ByteStream::bytes_written() const { return write_bytes; }
+size_t ByteStream::bytes_written() const { return written_bytes; }
 
 size_t ByteStream::bytes_read() const { return read_bytes; }
 

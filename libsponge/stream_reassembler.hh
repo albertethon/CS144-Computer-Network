@@ -13,8 +13,9 @@ using namespace std;
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-    ByteStream _output;  //!< The reassembled in-order byte stream
-    size_t _capacity;    //!< The maximum number of bytes
+    ByteStream _output;       //!< The reassembled in-order byte stream
+    const size_t _capacity;   //!< The maximum number of bytes
+    size_t _remain_capacity;  // The left number of bytes
     size_t _endptr;
     map<size_t, string> _datas;
     map<size_t, string> _assembled_strs;

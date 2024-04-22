@@ -41,13 +41,14 @@ void StreamReassembler::merge_all() {
 }
 
 void StreamReassembler::flush_assembled() {
+    // 当output有空余且assembled存在字符
     while (_output.remaining_capacity() > 0 && !_assembled_strs.empty()) {
-        auto _next_id = _assembled_strs.begin()->first;
-        auto _next_str = _assembled_strs.begin()->second;
-        auto write_bytes = _output.write(_next_str);
+        const unsigned long _next_id = _assembled_strs.begin()->first;
+        const auto &_next_str = _assembled_strs.begin()->second;
+        const size_t write_bytes = _output.write(_next_str);
 
         // add the capacity
-        _capacity += write_bytes;
+        _remain_capacity += write_bytes;
 
         // remove from assembled strs
         if (write_bytes == _next_str.length())
@@ -60,11 +61,17 @@ void StreamReassembler::flush_assembled() {
 }
 
 StreamReassembler::StreamReassembler(const size_t capacity)
-    : _output(capacity), _capacity(capacity), _endptr(-1), _datas(), _assembled_strs(), next_unassembled(0) {}
+    : _output(capacity)
+    , _capacity(capacity)
+    , _remain_capacity(capacity)
+    , _endptr(-1)
+    , _datas()
+    , _assembled_strs()
+    , next_unassembled(0) {}
 
 void StreamReassembler::__push_substring(const string &data, const size_t index) {
-    // overlap的部分assembled, 或空的情况跳过
-    if (data.empty() || index + data.length() <= next_unassembled)
+    // overlap的部分assembled, 或空的情况跳过，或index大于当前可接受的最后插入点
+    if (data.empty() || index + data.length() <= next_unassembled || index >= _output.bytes_written() + _capacity)
         return;
 
     size_t now = next_unassembled;
@@ -72,22 +79,22 @@ void StreamReassembler::__push_substring(const string &data, const size_t index)
     if (index < next_unassembled && next_unassembled < (index + data.length())) {
         // create data in un_assembled
         _datas[now] = data[now - index];
-        --_capacity;
+        --_remain_capacity;
         auto prev_iter = _datas.find(now);
         ++now;
         // find first key iter bigger than index
         auto next = _datas.upper_bound(index);
 
-        while (now < index + data.length() && _capacity > 0) {
+        while (now < index + data.length() && _remain_capacity > 0) {
             if (next == _datas.end()) {
                 // no next iter
                 prev_iter->second.push_back(data[now - index]);
-                --_capacity;
+                --_remain_capacity;
                 ++now;
             } else if (now < next->first) {
                 // between prev and next
                 prev_iter->second.push_back(data[now - index]);
-                --_capacity;
+                --_remain_capacity;
                 ++now;
             } else {
                 // now meet next data_id, update next,prev
@@ -109,23 +116,23 @@ void StreamReassembler::__push_substring(const string &data, const size_t index)
         if (prev_iter == _datas.end() || prev_iter->first > now ||
             (prev_iter->first + prev_iter->second.length()) < now) {
             _datas[now] = data[0];
-            --_capacity;
+            --_remain_capacity;
             prev_iter = _datas.find(now);
             ++now;
         }
         auto next = prev_iter;
         ++next;
         now = prev_iter->first + prev_iter->second.length();
-        while (now < index + data.length() && _capacity > 0) {
+        while (now < index + data.length() && _remain_capacity > 0) {
             if (next == _datas.end()) {
                 // no next iter
                 prev_iter->second.push_back(data[now - index]);
-                --_capacity;
+                --_remain_capacity;
                 ++now;
             } else if (now < next->first) {
                 // between prev and next
                 prev_iter->second.push_back(data[now - index]);
-                --_capacity;
+                --_remain_capacity;
                 ++now;
             } else {
                 // now meet next data_id, update next,prev

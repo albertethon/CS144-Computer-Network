@@ -14,7 +14,7 @@ class ByteStream {
     // Your code here -- add private members as necessary.
 
     std::deque<char> buffer;
-    ulong read_bytes, write_bytes;
+    ulong read_bytes, written_bytes;
     size_t maximum;
     bool ended;
     // Hint: This doesn't need to be a sophisticated data structure at
