@@ -12,10 +12,13 @@ class TCPConnection {
     TCPConfig _cfg;
     TCPReceiver _receiver{_cfg.recv_capacity};
     TCPSender _sender{_cfg.send_capacity, _cfg.rt_timeout, _cfg.fixed_isn};
+    size_t _time_since_last_segment_received{0};
+    bool _is_active{true};
 
     //! outbound queue of segments that the TCPConnection wants sent
     std::queue<TCPSegment> _segments_out{};
 
+    void _set_rst_state(bool send_rst);
     //! Should the TCPConnection stay active (and keep ACKing)
     //! for 10 * _cfg.rt_timeout milliseconds after both streams have ended,
     //! in case the remote TCPConnection doesn't know we've received its whole stream?
@@ -65,6 +68,8 @@ class TCPConnection {
     //! Called when a new segment has been received from the network
     void segment_received(const TCPSegment &seg);
 
+    //! transmit segments
+    void _transmit_seg_with_ack_syn();
     //! Called periodically when time elapses
     void tick(const size_t ms_since_last_tick);
 

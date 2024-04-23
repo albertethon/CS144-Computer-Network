@@ -20,7 +20,8 @@ class TCPSender {
   private:
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
-
+    bool _is_syn_flag{false};
+    bool _is_fin_sent{false};// fin只能发一次
     //! outbound queue of segments that the TCPSender wants sent
     std::queue<TCPSegment> _segments_out{};
 
@@ -30,7 +31,7 @@ class TCPSender {
     //! outgoing stream of bytes that have not yet been sent
     ByteStream _stream;
 
-    //! send and not received ack segment, list方便更改
+    //! send and not received ack segment
     std::deque<TCPSegment> _outstanding{};
     uint64_t _outgoing_bytes{0};
     //! window size of receiver, default 1

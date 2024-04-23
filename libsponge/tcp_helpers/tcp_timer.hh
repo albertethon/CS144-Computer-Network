@@ -6,7 +6,7 @@
 
 class TCP_Timer{
 
-size_t _RTO;
+unsigned int _RTO;
 unsigned int _now{0};
 bool _started{false};
 public:
@@ -17,9 +17,13 @@ public:
         _started = true;
     }
     // 从0开始重新计数
-    void restart(){
+    void restart(unsigned int now=0) {
         _started = true;
-        _now = 0;
+        _now = now;
+    }
+
+    unsigned int getNow(){
+        return _now;
     }
 
     // 关闭计时器
@@ -28,9 +32,9 @@ public:
         _now = 0;
     }
 
-    size_t get_RTO() const { return _RTO; }
+    unsigned int get_RTO() const { return _RTO; }
 
-    void set_RTO(size_t new_RTO) { _RTO = new_RTO; }
+    void set_RTO(unsigned int new_RTO) { _RTO = new_RTO; }
 
     /**
      * @brief 判断过了@param 是否超时
@@ -39,7 +43,7 @@ public:
      * @return true 
      * @return false 
      */
-    bool timeOut(const size_t ms_since_last_tick){
+    bool timeOut(const unsigned int ms_since_last_tick){
         //未启动不计时
         if(!_started)return false;
 

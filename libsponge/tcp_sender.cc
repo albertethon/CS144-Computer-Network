@@ -40,61 +40,49 @@ void TCPSender::fill_window() {
         TCPHeader &header = seg.header();
         Buffer &buffer = seg.payload();
 
-        /**
-         * @brief sender的状态分为CLOSED, SYN_SENT, SYN_ACKED, SYN_ACKED_EOF, FIN_SENT, FIN_ACKED
-         * @note
-                CLOSED:         next_seqno_absolute == 0
-
-                SYN_SENT:       next_seqno_absolute > 0
-                                && next_seqno_absolute == bytes_in_flight
-
-                SYN_ACKED:      not eof
-                                && next_seqno_absolute > bytes_in_flight
-
-                SYN_ACKED_EOF:  eof
-                                && next_seqno_absolute < bytes_written + 2
-
-                FIN_SENT:       eof
-                                && next_seqno_absolute == bytes_written + 2
-                                && bytes_in_flight > 0
-
-                FIN_ACKED:      eof
-                                && next_seqno_absolute == bytes_written + 2
-                                && bytes_in_flight == 0
-         */
-
         // 装填window,SYN和FIN占一个window_size
-        if (next_seqno_absolute() == 0) {  //  CLOSE时单发一个SYN
+        if (!_is_syn_flag) {  //  CLOSE时单发一个SYN
             header.syn = true;
-        } else if (next_seqno_absolute() == bytes_in_flight()) {  // SYN_SENT 此时未建立连接不能发
-            break;
-        } else if (_stream.input_ended() &&
-                   next_seqno_absolute() == _stream.bytes_written() + 2) {  // FIN_SENT || FIN_ACKED 此时调用都不发
-            break;
+            _is_syn_flag = true;
         }
+        header.seqno = next_seqno();  // 更新序号
 
         // 窗口删去outstanding 字节数和SYN包，看看剩下最多装多少payload
         auto max_payload_size = min(_send_window_size - _outgoing_bytes - header.syn, TCPConfig::MAX_PAYLOAD_SIZE);
         buffer = Buffer(_stream.read(max_payload_size));
 
-        // 此时需要判断窗口是否有位置装FIN包
-        if (_stream.input_ended() && _outgoing_bytes + seg.length_in_sequence_space() < _send_window_size) {
+        /**
+         * @brief 读取好后，如果满足以下条件，则增加 FIN
+         *  1. 从来没发送过 FIN
+         *  2. 输入字节流处于 EOF，必须是处于eof,即_stream.eof(), 
+                之前我写_stream.input_ended()，这个表示曾输入过eof, 但可能buffer里还有字节未传输出去
+                debug了一天！
+         *  3. window 减去 payload与syn标志大小后，仍然可以存放下 FIN
+         *
+         */
+        if (!_is_fin_sent && _stream.eof() && _outgoing_bytes + buffer.size() + header.syn < _send_window_size) {
             header.fin = true;
+            _is_fin_sent = true;
         }
 
         // 数据包是空的，就不发
         if (seg.length_in_sequence_space() == 0)
             break;
 
-        header.seqno = next_seqno();                        // 更新序号
+        // 如果没有等待队列的数据包，则更新时间
+        if (_outstanding.empty()){
+            _tcp_timer.restart();
+            _tcp_timer.set_RTO(_initial_retransmission_timeout);
+        }
+        
         _next_seqno += seg.length_in_sequence_space();      // seq自增
         _outgoing_bytes += seg.length_in_sequence_space();  // 追踪outgoing窗口
-        _last_ackno = max(_last_ackno, _next_seqno);        // 追踪最后一个ACK序号大小
 
         // 不必担心复制带来的空间浪费，这里seg.payload的buffer是共享指针管理的，只存储一份storage
-        _segments_out.push(seg);
-        _outstanding.push_back(seg);
-        _tcp_timer.start();
+        _segments_out.push(seg);                          // 发送
+        _outstanding.push_back(seg);                      // 追踪
+
+        if(seg.header().fin)break;                          // 如果该包为结束包，则不应继续发送
     }
 }
 
@@ -103,7 +91,7 @@ void TCPSender::fill_window() {
 void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_size) {
     // 当收到的ackno大于最后一个等待的ack时抛弃
     const size_t ack_recvd = unwrap(ackno, _isn, next_seqno_absolute());
-    if (ack_recvd > _last_ackno)
+    if (ack_recvd > _next_seqno)
         return;
 
     _recv_window_size = window_size;
@@ -117,7 +105,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
      * @param out_seg:_outstanding
      */
     while (!_outstanding.empty()) {
-        const TCPSegment out_seg = _outstanding.front();
+        const TCPSegment& out_seg = _outstanding.front();
         const auto ack_wait_wrap = out_seg.header().seqno + out_seg.length_in_sequence_space();
         const size_t ack_wait = unwrap(ack_wait_wrap, _isn, next_seqno_absolute());
 
@@ -133,8 +121,6 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
     // 当有outstanding包ack确认收到， 则重置计时器
     if (_old_size != _outstanding.size()) {
         _tcp_timer.set_RTO(_initial_retransmission_timeout);
-        // 连续重传计数器置为0
-        _RT_times = 0;
 
         // 还存在outstanding data就重启计时器
         if (!_outstanding.empty()) {
@@ -143,9 +129,10 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
             _tcp_timer.close();
         }
     }
+    // 连续重传计数器置为0,只要收到ACK就应当置0
+    _RT_times = 0;
 
-    // 收到ACK更新seqno, 如果是之前的ack就不更新
-    // _next_seqno = max(_next_seqno,ack_recvd);
+    fill_window();
 }
 
 /**
@@ -154,7 +141,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
  * @param ms_since_last_tick
  */
 void TCPSender::tick(const size_t ms_since_last_tick) {
-    if (_tcp_timer.timeOut(ms_since_last_tick)) {
+    if (!_outstanding.empty() && _tcp_timer.timeOut(ms_since_last_tick)) {
         // 如果已经过期
         // 跟踪连续重传次数，自增
         ++_RT_times;
