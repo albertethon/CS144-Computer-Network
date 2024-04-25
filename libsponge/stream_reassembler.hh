@@ -16,7 +16,7 @@ class StreamReassembler {
     ByteStream _output;      //!< The reassembled in-order byte stream
     const size_t _capacity;  //!< The maximum number of bytes
     size_t _endptr;
-    map<size_t, string> _unassembled_datas;
+    map<size_t, BufferList> _unassembled_datas;
     BufferList _assembled_strs;
     size_t next_unassembled;
     // output buffer满了, 写不进去, 需要在此排队等候

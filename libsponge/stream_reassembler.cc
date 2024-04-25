@@ -124,7 +124,8 @@ void StreamReassembler::__push_substring(const string &data, const size_t index)
             return;
 
         if (_last_remove->first <= _data_right_index) {
-            _assembled_strs.append(Buffer(_last_remove->second.substr(_data_right_index - _last_remove->first)));
+            _last_remove->second.remove_prefix(_data_right_index - _last_remove->first);
+            _assembled_strs.append(std::move(_last_remove->second));
             _unassembled_datas.erase(_last_remove);
         }
     } else {
@@ -236,7 +237,7 @@ void StreamReassembler::__push_substring(const string &data, const size_t index)
                     return;  // 当data小于当前的header str时，表示被完全覆盖, 是重复的串
                 header_iter->second.append(data.substr(pos, str_size));
             } else {  // 2
-                _unassembled_datas[index] = data;
+                _unassembled_datas.insert_or_assign(index, string(data));
                 header_iter = next(header_iter);
             }
         }
@@ -260,11 +261,12 @@ void StreamReassembler::__push_substring(const string &data, const size_t index)
         }
 
         const size_t overlap_id = overlap_tail->first;
-        const string &overlap_str = overlap_tail->second;
+        auto &overlap_str = overlap_tail->second;
 
         // 相交才会append, erase
         if (overlap_id <= _data_right_index && (overlap_id + overlap_str.size()) > _data_right_index) {
-            header_iter->second.append(overlap_str.substr(_data_right_index - overlap_id));
+            overlap_str.remove_prefix(_data_right_index - overlap_id);
+            header_iter->second.append(overlap_str);
             _unassembled_datas.erase(overlap_tail);
         }
     }
@@ -291,7 +293,7 @@ void StreamReassembler::push_substring(const string &data, const size_t index, c
 size_t StreamReassembler::unassembled_bytes() const {
     size_t unassembledBytes = 0;
     for (auto iter : _unassembled_datas) {
-        unassembledBytes += iter.second.length();
+        unassembledBytes += iter.second.size();
     }
     return unassembledBytes;
 }
