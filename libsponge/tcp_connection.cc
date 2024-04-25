@@ -37,7 +37,6 @@ void TCPConnection::_set_rst_state(bool send_rst) {
 }
 
 void TCPConnection::segment_received(const TCPSegment &seg) {
-
     auto _sender_state = TCPState::state_summary(_sender);
     auto _recv_state = TCPState::state_summary(_receiver);
 
@@ -45,13 +44,11 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     _time_since_last_segment_received = 0;
     _receiver.segment_received(seg);  // 收包
 
+    bool need_send_ack = seg.length_in_sequence_space();  // 对于所有SYN,FIN以及含有payload的数据都要ACK
 
-    bool need_send_ack = seg.length_in_sequence_space();// 对于所有SYN,FIN以及含有payload的数据都要ACK
-    
     //----------------ERROR状态或接收RST----------------------//
     // 错误状态直接结束
-    if (_sender_state == TCPSenderStateSummary::ERROR 
-        || _recv_state == TCPReceiverStateSummary::ERROR) {
+    if (_sender_state == TCPSenderStateSummary::ERROR || _recv_state == TCPReceiverStateSummary::ERROR) {
         return;
     }
     // 当接收的包含有RST标志
@@ -68,7 +65,6 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
             return;
         }
     }
-    
 
     //----------------收到ACK，更新sender状态----------------------//
     if (seg.header().ack) {
@@ -76,17 +72,15 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     }
 
     //---------------------握手逻辑----------------------//
-    if (seg.header().syn
-    &&  _recv_state == TCPReceiverStateSummary::LISTEN
-    &&  _sender_state==TCPSenderStateSummary::CLOSED) {
+    if (seg.header().syn && _recv_state == TCPReceiverStateSummary::LISTEN &&
+        _sender_state == TCPSenderStateSummary::CLOSED) {
         connect();
         return;
     }
     //---------------------挥手逻辑----------------------//
     // 收到第一次挥手：收到的包有FIN，且local之前未发过FIN, 则挥手时采用被动关闭，不等
     //              如果没数据发ACK空包，否则结合数据发过去
-    if (seg.header().fin 
-    && _sender_state == TCPSenderStateSummary::SYN_ACKED) {
+    if (seg.header().fin && _sender_state == TCPSenderStateSummary::SYN_ACKED) {
         _linger_after_streams_finish = false;
         // _sender.fill_window();
     }
@@ -94,8 +88,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
 
     // 收到第四次挥手：关闭
     if (TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
-        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED && 
-        !_linger_after_streams_finish) {
+        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED && !_linger_after_streams_finish) {
         _is_active = false;
         return;
     }
@@ -108,9 +101,7 @@ void TCPConnection::segment_received(const TCPSegment &seg) {
     _transmit_seg_with_ack_syn();
 }
 
-bool TCPConnection::active() const {
-    return _is_active;
-}
+bool TCPConnection::active() const { return _is_active; }
 
 size_t TCPConnection::write(const string &data) {
     // when tcp connection died
@@ -130,7 +121,8 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     assert(_sender.segments_out().empty());
     _sender.tick(ms_since_last_tick);
     // 当重传次数超过最大值，则发送RST包并abort当前connection
-    if (_sender.consecutive_retransmissions() > _cfg.MAX_RETX_ATTEMPTS) {// 用当前对象_cfg, 而非TCPConfig, 后者无法在外部更改
+    if (_sender.consecutive_retransmissions() >
+        _cfg.MAX_RETX_ATTEMPTS) {  // 用当前对象_cfg, 而非TCPConfig, 后者无法在外部更改
         while (!_sender.segments_out().empty()) {
             _sender.segments_out().pop();
         }
@@ -143,11 +135,10 @@ void TCPConnection::tick(const size_t ms_since_last_tick) {
     _time_since_last_segment_received += ms_since_last_tick;
 
     // 主动关闭方在sender FIN_ACK 且 receiver FIN_RCVD后等待 10 * rto关闭
-    if (_linger_after_streams_finish && 
-        TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED &&
+    if (_linger_after_streams_finish && TCPState::state_summary(_sender) == TCPSenderStateSummary::FIN_ACKED &&
         TCPState::state_summary(_receiver) == TCPReceiverStateSummary::FIN_RECV &&
         _time_since_last_segment_received >= (10 * _cfg.rt_timeout)) {
-        _is_active = false;  // 时间不够则继续活跃   
+        _is_active = false;  // 时间不够则继续活跃
         _linger_after_streams_finish = false;
     }
 }
@@ -166,10 +157,10 @@ void TCPConnection::connect() {
     _transmit_seg_with_ack_syn();
 }
 
-void TCPConnection::_transmit_seg_with_ack_syn(){
+void TCPConnection::_transmit_seg_with_ack_syn() {
     TCPSegment sender_seg;
     // sender 有待发送包， 发完
-    while(!_sender.segments_out().empty()){
+    while (!_sender.segments_out().empty()) {
         sender_seg = _sender.segments_out().front();
         _sender.segments_out().pop();
 

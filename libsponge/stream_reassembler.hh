@@ -13,18 +13,13 @@ using namespace std;
 class StreamReassembler {
   private:
     // Your code here -- add private members as necessary.
-    ByteStream _output;       //!< The reassembled in-order byte stream
-    const size_t _capacity;   //!< The maximum number of bytes
-    size_t _remain_capacity;  // The left number of bytes
+    ByteStream _output;      //!< The reassembled in-order byte stream
+    const size_t _capacity;  //!< The maximum number of bytes
     size_t _endptr;
-    map<size_t, string> _datas;
-    map<size_t, string> _assembled_strs;
+    map<size_t, string> _unassembled_datas;
+    BufferList _assembled_strs;
     size_t next_unassembled;
     // output buffer满了, 写不进去, 需要在此排队等候
-    // check if two string is overlapped
-    bool overlapped(const pair<size_t, string> &s1, const pair<size_t, string> &s2);
-    // merge the consistance data
-    void merge_all();
     void flush_assembled();
     void __push_substring(const string &data, const size_t index);
 
@@ -45,7 +40,7 @@ class StreamReassembler {
     void push_substring(const string &data, const uint64_t index, const bool eof);
 
     size_t get_next_unassembled() const { return next_unassembled + (next_unassembled == _endptr); }
-    size_t get_first_assembled() const { return _assembled_strs.begin()->first; }
+    size_t get_first_assembled() const { return _output.bytes_written(); }
     //! \name Access the reassembled byte stream
     //!@{
     const ByteStream &stream_out() const { return _output; }

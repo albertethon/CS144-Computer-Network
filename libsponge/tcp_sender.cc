@@ -54,7 +54,7 @@ void TCPSender::fill_window() {
         /**
          * @brief 读取好后，如果满足以下条件，则增加 FIN
          *  1. 从来没发送过 FIN
-         *  2. 输入字节流处于 EOF，必须是处于eof,即_stream.eof(), 
+         *  2. 输入字节流处于 EOF，必须是处于eof,即_stream.eof(),
                 之前我写_stream.input_ended()，这个表示曾输入过eof, 但可能buffer里还有字节未传输出去
                 debug了一天！
          *  3. window 减去 payload与syn标志大小后，仍然可以存放下 FIN
@@ -70,19 +70,20 @@ void TCPSender::fill_window() {
             break;
 
         // 如果没有等待队列的数据包，则更新时间
-        if (_outstanding.empty()){
+        if (_outstanding.empty()) {
             _tcp_timer.restart();
             _tcp_timer.set_RTO(_initial_retransmission_timeout);
         }
-        
+
         _next_seqno += seg.length_in_sequence_space();      // seq自增
         _outgoing_bytes += seg.length_in_sequence_space();  // 追踪outgoing窗口
 
         // 不必担心复制带来的空间浪费，这里seg.payload的buffer是共享指针管理的，只存储一份storage
-        _segments_out.push(seg);                          // 发送
-        _outstanding.push_back(seg);                      // 追踪
+        _segments_out.push(seg);      // 发送
+        _outstanding.push_back(seg);  // 追踪
 
-        if(seg.header().fin)break;                          // 如果该包为结束包，则不应继续发送
+        if (seg.header().fin)
+            break;  // 如果该包为结束包，则不应继续发送
     }
 }
 
@@ -105,7 +106,7 @@ void TCPSender::ack_received(const WrappingInt32 ackno, const uint16_t window_si
      * @param out_seg:_outstanding
      */
     while (!_outstanding.empty()) {
-        const TCPSegment& out_seg = _outstanding.front();
+        const TCPSegment &out_seg = _outstanding.front();
         const auto ack_wait_wrap = out_seg.header().seqno + out_seg.length_in_sequence_space();
         const size_t ack_wait = unwrap(ack_wait_wrap, _isn, next_seqno_absolute());
 

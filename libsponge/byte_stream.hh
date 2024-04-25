@@ -1,6 +1,8 @@
 #ifndef SPONGE_LIBSPONGE_BYTE_STREAM_HH
 #define SPONGE_LIBSPONGE_BYTE_STREAM_HH
 
+#include "buffer.hh"
+
 #include <deque>
 #include <string>
 
@@ -13,7 +15,7 @@ class ByteStream {
   private:
     // Your code here -- add private members as necessary.
 
-    std::deque<char> buffer;
+    BufferList buffer;
     ulong read_bytes, written_bytes;
     size_t maximum;
     bool ended;

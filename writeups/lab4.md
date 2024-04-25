@@ -41,17 +41,52 @@ Implementation Challenges:
 
 注意不对纯ACK进行ACK，其他的包一律ACK
 sender在接收到ACK时要检查是否有因为堵塞未发送的包(outgoing占满)， 当留出空要立即发送，这个工作应由sender完成
-修复tcp_sender BUG:
-    1. ack接收到后无论如何都应当设置重传计数器，而不是看是否成功ACK了outgoing packets
-    2. 读取好后，如果满足以下条件，则增加 FIN
-         *从来没发送过 FIN
-         * 输入字节流处于 EOF，必须是处于eof,即_stream.eof(),
-                之前我写_stream.input_ended()，这个表示曾输入过eof, 但可能buffer里还有字节未传输出去
-                debug了一天！
-         * window 减去 payload与syn标志大小后，仍然可以存放下 FIN
+修复tcp_sender BUG:  
+1. ack接收到后无论如何都应当设置重传计数器，而不是看是否成功ACK了outgoing packets  
+2. 读取好后，如果满足以下条件，则增加 FIN  
+
+* 从来没发送过 FIN  
+* 输入字节流处于 EOF，必须是处于eof,即_stream.eof(),
+        之前我写_stream.input_ended()，这个表示曾输入过eof, 但可能buffer里还有字节未传输出去
+        debug了一天！  
+* window 减去 payload与syn标志大小后，仍然可以存放下 FIN
+
+优化：  
+    1. 对stream_reassembler进行优化，将存储assemble的结构由map改为string(其本身是连续的)  
+    2. 更改peek_out,pop_out逻辑, 删去分支判断, 删去peek中循环部分，直接用string的构造函数, 0.6Gb/s提升至1.0Gb/s  
+    3. 将write部分由for循环 push_back, 改为insert到end, 1.0Gb/s提升至1.38Gb/s  
+    4. lab1中stream_reassembler 对于map的范围删除erase部分, 如果采用逐个比较是否覆盖，需要删除m个节点是O(m logn)的复杂度， 如果用upper_bound和erase(first, last)来删除, 则复杂度分别为 O(logn) 与 O(logn + k)
+    5. 将push_string中存储 assemble的结构用buffer代替, Debug版本速度提升至 2.56Gb/s
+
+修复BUG：
+
+测试fsm_stream_reassembler_many会出现double free问题，这个问题debug了我两天， 问题出在assembled 压进out_put后， remove_prefix时会出现double free
+
+valgrind查 free 发现有一个地方free了一个大小为0的block size. 估计是这里 double free.
+
+查 alloc这块内存的源码， 问题出在__push_substring中data 覆盖assemble与 unassemble场景下
+
+这里我是打算声明一个string变量存储被截断的data, 通过右值引用接到assemble的尾部。原本如此做
+
+```cpp
+string&& _append_str = move(string().assign(data.substr(next_unassembled - index, _data_write_len)));//error
+
+_assembled_strs.append(Buffer(std::move(_append_str)));
+```
+
+发现在这里居然会出现一个free， 如果抛弃右值引用将上述右值全部填入append参数，即可通过
+
+```cpp
+_assembled_strs.append(
+Buffer(move(string().assign(
+data.substr(next_unassembled - index, _data_write_len)))));
+```
+
 
 Remaining Bugs:
-[]
+
+lab4 的部分测试Test145~153无法通过，查找网上的其他仓库运行也无法通过， 逛论坛有人提出可能是网速和性能问题，暂搁置
+
 
 - Optional: I had unexpected difficulty with: [describe]
 
@@ -59,4 +94,4 @@ Remaining Bugs:
 
 - Optional: I was surprised by: [describe]
 
-- Optional: I'm not sure about: [describe]
+- Optional: I'm not sure about: 

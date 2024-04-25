@@ -21,7 +21,7 @@ class TCPSender {
     //! our initial sequence number, the number for our SYN.
     WrappingInt32 _isn;
     bool _is_syn_flag{false};
-    bool _is_fin_sent{false};// fin只能发一次
+    bool _is_fin_sent{false};  // fin只能发一次
     //! outbound queue of segments that the TCPSender wants sent
     std::queue<TCPSegment> _segments_out{};
 
