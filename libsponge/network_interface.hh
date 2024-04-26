@@ -1,10 +1,12 @@
 #ifndef SPONGE_LIBSPONGE_NETWORK_INTERFACE_HH
 #define SPONGE_LIBSPONGE_NETWORK_INTERFACE_HH
 
+#include "arp_message.hh"
 #include "ethernet_frame.hh"
 #include "tcp_over_ip.hh"
 #include "tun.hh"
 
+#include <map>
 #include <optional>
 #include <queue>
 
@@ -40,6 +42,15 @@ class NetworkInterface {
     //! outbound queue of Ethernet frames that the NetworkInterface wants sent
     std::queue<EthernetFrame> _frames_out{};
 
+    //! IP->MAC ARP缓存表
+    std::map<uint32_t, EthernetAddress> _arp_cache{};
+    //! pair<ip,mac> --> time 表示ip->mac映射的时间，超过30s就要删去
+    std::map<std::pair<uint32_t, EthernetAddress>, size_t> _arp_time{};
+    //! IP->time 表示请求某个IP的arp的等待时间
+    std::map<uint32_t, size_t> _arp_sent{};
+    //! InternetDatagram queued
+    std::map<uint32_t, std::queue<InternetDatagram>> _queued_IPData{};
+
   public:
     //! \brief Construct a network interface with given Ethernet (network-access-layer) and IP (internet-layer) addresses
     NetworkInterface(const EthernetAddress &ethernet_address, const Address &ip_address);
@@ -53,6 +64,10 @@ class NetworkInterface {
     //! ("Sending" is accomplished by pushing the frame onto the frames_out queue.)
     void send_datagram(const InternetDatagram &dgram, const Address &next_hop);
 
+    //! \brief Broadcast an ARP request
+    void _ARP_Request(const uint32_t next_hop_ip);
+    //! \brief Reply the ARP request
+    void _ARP_Reply(ARPMessage &&arp_reply);
     //! \brief Receives an Ethernet frame and responds appropriately.
 
     //! If type is IPv4, returns the datagram.

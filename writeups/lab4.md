@@ -82,6 +82,10 @@ Buffer(move(string().assign(
 data.substr(next_unassembled - index, _data_write_len)))));
 ```
 
+这里我猜测一个bug原因:  
+右值引用本身也是作为一个左值存在, 具有作用域, 在离开作用域后该右值引用连同所指向的右值被销毁, 此时触发一个析构。  
+然而这个右值是此前被move 并append到外部assembled_str中的， 使得当前作用域在销毁作用域内的局部变量时顺便销毁了作用域外的一块内存(被当前右值引用所指向的地方)。
+这就是提前析构，那第二次正常析构就肯定会导致double free了
 
 Remaining Bugs:
 
