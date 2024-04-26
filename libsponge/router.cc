@@ -29,14 +29,57 @@ void Router::add_route(const uint32_t route_prefix,
     cerr << "DEBUG: adding route " << Address::from_ipv4_numeric(route_prefix).ip() << "/" << int(prefix_length)
          << " => " << (next_hop.has_value() ? next_hop->ip() : "(direct)") << " on interface " << interface_num << "\n";
 
-    DUMMY_CODE(route_prefix, prefix_length, next_hop, interface_num);
-    // Your code here.
+    if (prefix_length > 32)
+        return;
+
+    uint32_t mast_code = ~((1ul << (32 - prefix_length)) - 1);
+    uint32_t rout_net = route_prefix & mast_code;
+    // direct link
+    if (!next_hop.has_value()) {
+        _next_hop2interface[rout_net] = interface_num;
+    } else {
+        _next_hop[make_pair(route_prefix, prefix_length)] = next_hop->ipv4_numeric();
+        _next_hop2interface[next_hop->ipv4_numeric()] = interface_num;
+    }
 }
 
 //! \param[in] dgram The datagram to be routed
 void Router::route_one_datagram(InternetDatagram &dgram) {
-    DUMMY_CODE(dgram);
-    // Your code here.
+    auto route_prefix = dgram.header().dst;
+    int prefix_length = 32;
+    // 没找到就逐渐缩减mask长度
+    while (prefix_length >= 0) {
+        uint32_t mast_code = ~((1ul << (32 - prefix_length)) - 1);
+        uint32_t rout_net = route_prefix & mast_code;
+        // route link
+        if (_next_hop.find(make_pair(rout_net, prefix_length)) != _next_hop.end()) {
+            auto _next_hop_id = _next_hop[make_pair(rout_net, prefix_length)];
+            if (_next_hop2interface.find(_next_hop_id) == _next_hop2interface.end()) {
+                cout << "ERROR, not found interface" << Address::from_ipv4_numeric(_next_hop_id).ip() << "\n";
+                return;
+            }
+            if (dgram.header().ttl > 1) {
+                dgram.header().ttl--;
+                auto interface_id = _next_hop2interface[_next_hop_id];
+                _interfaces[interface_id].send_datagram(dgram, Address::from_ipv4_numeric(_next_hop_id));
+            }
+            return;
+        }
+        // direct link
+        if (_next_hop2interface.find(rout_net) != _next_hop2interface.end()) {
+            auto interface_id = _next_hop2interface[rout_net];
+            if (interface_id > _interfaces.size()) {
+                cout << "ERROR: interface id:\t" << interface_id << "not found" << endl;
+                return;
+            }
+            if (dgram.header().ttl > 1) {
+                dgram.header().ttl--;
+                _interfaces[interface_id].send_datagram(dgram, Address::from_ipv4_numeric(route_prefix));
+            }
+            return;
+        }
+        --prefix_length;
+    }
 }
 
 void Router::route() {

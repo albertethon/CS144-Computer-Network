@@ -48,6 +48,10 @@ class Router {
     //! as specified by the route with the longest prefix_length that matches the
     //! datagram's destination address.
     void route_one_datagram(InternetDatagram &dgram);
+    //! store the map: <rout_pre,len> -> next_hop
+    std::map<std::pair<uint32_t, uint8_t>, uint32_t> _next_hop{};
+    //! store the map: next_hop -> interface
+    std::map<uint32_t, size_t> _next_hop2interface{};
 
   public:
     //! Add an interface to the router
